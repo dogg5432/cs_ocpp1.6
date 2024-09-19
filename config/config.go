@@ -16,8 +16,7 @@ type ServerConfig struct{
 }
 
 type DatabaseConfig struct{
-	Ip string `mapstructture:"ip"`
-	Port int `mapstructure:"port"`
+	Uri string `mapstructture:"uri"`
 }
 
 func Load() (*Config, error){
