@@ -7,7 +7,10 @@ import (
 )
 
 func main(){
-	config.Load()
-	database.Connect(config.Config.Database.Uri)
+	var configApp,err = config.Load()
+	if err != nil {
+		panic(err)
+	}
+	database.Connect(configApp.Database.Uri)
 	serve.Run()
 }
