@@ -3,6 +3,7 @@ package serve
 import (
 	"fmt"
 
+	"github.com/dogg5432/central_charger/handlers"
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
 )
 
@@ -18,12 +19,12 @@ func Run() {
 	})
 
 	// Set handler for profile callbacks
-	// handler := &CentralSystemHandler{}
-	// centralSystem.SetCoreHandler(handler)
+	Charginghandler := &handlers.ChargingStationHandler{}
+	centralSystem.SetCoreHandler(Charginghandler)
 
 	// Start central system
 	listenPort := 8887
 	fmt.Printf("starting central system")
-	centralSystem.Start(listenPort, "/{ws}") // This call starts server in daemon mode and is blocking
+	centralSystem.Start(listenPort, "/ocpp16") // This call starts server in daemon mode and is blocking
 	fmt.Println("stopped central system")
 }
