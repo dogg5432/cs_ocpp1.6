@@ -1,21 +1,44 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"time"
-
+	
 	"github.com/dogg5432/central_charger/config"
+	"github.com/dogg5432/central_charger/models"
+	"github.com/dogg5432/central_charger/repository"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
-
-var defaultHeartbeatInterval = config.ConfigApp.Server.HeartbeatInterval
 
 type ChargingStationHandler struct{}
 
 func (h *ChargingStationHandler) OnBootNotification(chargePoint string, request *core.BootNotificationRequest) (confirmation *core.BootNotificationConfirmation, error error) {
 	fmt.Printf("OnBootNotification => %s %v\n", chargePoint, request)
-	return core.NewBootNotificationConfirmation(types.NewDateTime(time.Now()), defaultHeartbeatInterval, core.RegistrationStatusAccepted), nil
+	chargePointModel,err := repository.GetChargePointByID(context.Background(), chargePoint)
+	if err != nil {
+		fmt.Println(err)
+		return core.NewBootNotificationConfirmation(types.NewDateTime(time.Now()), config.ConfigApp.Server.HeartbeatInterval, core.RegistrationStatusRejected), err
+	}
+	if chargePointModel != nil {
+		return core.NewBootNotificationConfirmation(types.NewDateTime(time.Now()), config.ConfigApp.Server.HeartbeatInterval, core.RegistrationStatusAccepted), nil
+	}
+	chargePointModel = &models.ChargePoint{
+		ChargePointID: chargePoint,
+		Vendor:        request.ChargePointVendor,
+		Model:         request.ChargePointModel,
+		Status:        "Available",
+		Connectors:    []models.Connector{},
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	}
+	err = repository.CreateChargePoint(context.Background(), chargePointModel)
+	if err != nil {
+		fmt.Println(err)
+		return core.NewBootNotificationConfirmation(types.NewDateTime(time.Now()), config.ConfigApp.Server.HeartbeatInterval, core.RegistrationStatusRejected), err
+	}
+	return core.NewBootNotificationConfirmation(types.NewDateTime(time.Now()), config.ConfigApp.Server.HeartbeatInterval, core.RegistrationStatusAccepted), nil
 }
 
 func (h *ChargingStationHandler) OnMeterValues(chargePoint string, request *core.MeterValuesRequest) (confirmation *core.MeterValuesConfirmation, error error) {
@@ -45,7 +68,7 @@ func (h *ChargingStationHandler) OnDataTransfer(chargePoint string, request *cor
 
 func (h *ChargingStationHandler) OnStartTransaction(chargePoint string, request *core.StartTransactionRequest) (confirmation *core.StartTransactionConfirmation, error error) {
 	fmt.Printf("OnStartTransaction => %s %v\n", chargePoint, request)
-	return core.NewStartTransactionConfirmation(&types.IdTagInfo{},123), nil
+	return core.NewStartTransactionConfirmation(&types.IdTagInfo{}, 123), nil
 }
 
 func (h *ChargingStationHandler) OnStopTransaction(chargePoint string, request *core.StopTransactionRequest) (confirmation *core.StopTransactionConfirmation, error error) {

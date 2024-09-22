@@ -7,12 +7,10 @@ import (
 )
 
 func main(){
-	err := config.Load()
-	if err != nil {
+	if err := config.Load(); err != nil {
 		panic(err)
 	}
-	err = database.Connect()
-	if err != nil {
+	if err := database.Connect(); err != nil {
 		panic(err)
 	}
 	serve.Run()
