@@ -7,10 +7,13 @@ import (
 )
 
 func main(){
-	var configApp,err = config.Load()
+	err := config.Load()
 	if err != nil {
 		panic(err)
 	}
-	database.Connect(configApp.Database.Uri)
+	err = database.Connect()
+	if err != nil {
+		panic(err)
+	}
 	serve.Run()
 }

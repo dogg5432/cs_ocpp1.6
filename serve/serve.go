@@ -5,9 +5,11 @@ import (
 
 	"github.com/dogg5432/central_charger/handlers"
 	ocpp16 "github.com/lorenzodonini/ocpp-go/ocpp1.6"
+	"github.com/dogg5432/central_charger/config"
 )
 
 func Run() {
+	configApp := config.ConfigApp.Server
 	centralSystem := ocpp16.NewCentralSystem(nil, nil)
 
 	// Set callback handlers for connect/disconnect
@@ -23,8 +25,8 @@ func Run() {
 	centralSystem.SetCoreHandler(Charginghandler)
 
 	// Start central system
-	listenPort := 8887
+	listenPort := configApp.Port
 	fmt.Printf("starting central system")
-	centralSystem.Start(listenPort, "/ocpp16") // This call starts server in daemon mode and is blocking
+	centralSystem.Start(listenPort, configApp.Path) // This call starts server in daemon mode and is blocking
 	fmt.Println("stopped central system")
 }

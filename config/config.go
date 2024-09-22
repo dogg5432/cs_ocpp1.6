@@ -13,23 +13,28 @@ type Config struct{
 
 type ServerConfig struct{
 	Port int `mapstructure:"port"`
+	Path string `mapstructure:"path"`
+	HeartbeatInterval int `mapstructure:"heartbeat_interval"`
 }
 
 type DatabaseConfig struct{
 	Uri string `mapstructture:"uri"`
 }
 
-func Load() (*Config, error){
+var ConfigApp *Config
+
+func Load() (error){
 	viper.SetConfigName("config")
 	viper.SetConfigType("json")
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig()
 	if err != nil {
-		return nil, fmt.Errorf("error reading config file: %w", err)
+		return fmt.Errorf("error reading config file: %w", err)
 	}
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
-		return nil, fmt.Errorf("unable to decode into struct: %w", err)
+		return fmt.Errorf("unable to decode into struct: %w", err)
 	}
-	return &config, nil
+	ConfigApp = &config
+	return nil
 }
