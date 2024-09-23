@@ -21,5 +21,6 @@ type ChargePointRepository interface {
 }
 
 type TransactionRepository interface {
-    CreateTransaction(ctx context.Context, trnx *models.Transaction) error
+	CreateTransaction(ctx context.Context, trnx *models.Transaction) error
+	GetTransactionByID(ctx context.Context, transactionID int) (*models.Transaction, error)
 }
