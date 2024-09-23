@@ -27,7 +27,7 @@ func GetChargePointByID(ctx context.Context, chargePointID string) (*models.Char
 	return &chargePoint, nil
 }
 
-func UpdateChargePointStatus(ctx context.Context, chargePointID string, status string) error {
-	_, err := database.Client.Collection("charge_points").UpdateOne(ctx, bson.M{"chargePointId": chargePointID}, bson.M{"$set": bson.M{"status": status}})
+func UpdateChargePoint(ctx context.Context, chargePointID string, chargePoint *models.ChargePoint) error {
+	_, err := database.Client.Collection("charge_points").UpdateOne(ctx, bson.M{"chargePointId": chargePointID}, bson.M{"$set": chargePoint})
 	return err
 }

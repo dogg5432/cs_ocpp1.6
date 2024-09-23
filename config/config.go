@@ -19,6 +19,7 @@ type ServerConfig struct{
 
 type DatabaseConfig struct{
 	Uri string `mapstructture:"uri"`
+	DatabaseName string `mapstructure:"database_name"`
 }
 
 var ConfigApp *Config
