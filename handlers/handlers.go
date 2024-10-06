@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strconv"
 	"time"
 
 	"github.com/dogg5432/central_charger/config"
@@ -43,13 +44,33 @@ func (h *ChargingStationHandler) OnBootNotification(chargePoint string, request 
 }
 
 func (h *ChargingStationHandler) OnMeterValues(chargePoint string, request *core.MeterValuesRequest) (confirmation *core.MeterValuesConfirmation, error error) {
-	fmt.Printf("OnMeterValues => %s %v\n", chargePoint, request)
+	fmt.Printf("Received MeterValues from Charge Point %s", chargePoint)
+
+	// Iterate over MeterValues in the request
+	for _, meterValue := range request.MeterValue {
+		fmt.Printf("Timestamp: %s", meterValue.Timestamp)
+
+		// Loop through SampledValues to log or process the data
+
+		for _, sampledValue := range meterValue.SampledValue {
+			value, _ := strconv.Atoi(sampledValue.Value)
+			sampleValueData := models.SampledValue{
+				Measurand: sampledValue.Measurand,
+				Value:     value,
+				Unit:      sampledValue.Unit,
+			}
+			fmt.Printf("Measurand: %s, Value: %s %s", sampledValue.Measurand, sampledValue.Value, sampledValue.Unit)
+			repository.SaveMeterValuesToDB(chargePoint, request.ConnectorId, request.TransactionId, &sampleValueData)
+		}
+	}
+
+	// Return confirmation response
 	return core.NewMeterValuesConfirmation(), nil
 }
 
 func (h *ChargingStationHandler) OnAuthorize(chargePoint string, request *core.AuthorizeRequest) (confirmation *core.AuthorizeConfirmation, error error) {
 	fmt.Printf("OnAuthorize => %s %v\n", chargePoint, request)
-	return core.NewAuthorizationConfirmation(&types.IdTagInfo{}), nil
+	return core.NewAuthorizationConfirmation(&types.IdTagInfo{Status: types.AuthorizationStatusAccepted}), nil
 }
 
 func (h *ChargingStationHandler) OnStatusNotification(chargePoint string, request *core.StatusNotificationRequest) (confirmation *core.StatusNotificationConfirmation, error error) {
@@ -111,10 +132,10 @@ func (h *ChargingStationHandler) OnStartTransaction(chargePoint string, request 
 	chargePointModel, err := repository.GetChargePointByID(context.Background(), chargePoint)
 	trnxID := int(time.Now().Unix())
 	if err != nil {
-		return core.NewStartTransactionConfirmation(&types.IdTagInfo{}, trnxID), err
+		return core.NewStartTransactionConfirmation(&types.IdTagInfo{Status: types.AuthorizationStatusInvalid}, trnxID), err
 	}
 	if chargePointModel == nil {
-		return core.NewStartTransactionConfirmation(&types.IdTagInfo{}, trnxID), nil
+		return core.NewStartTransactionConfirmation(&types.IdTagInfo{Status: types.AuthorizationStatusInvalid}, trnxID), nil
 	}
 	trnx := models.Transaction{
 		TransactionID: trnxID,
@@ -122,7 +143,6 @@ func (h *ChargingStationHandler) OnStartTransaction(chargePoint string, request 
 		ConnectorID:   request.ConnectorId,
 		UserID:        request.IdTag,
 		StartTime:     time.Now(),
-		StopTime:      time.Now(),
 		MeterStart:    request.MeterStart,
 		Status:        "START",
 		CreatedAt:     time.Now(),
@@ -130,13 +150,13 @@ func (h *ChargingStationHandler) OnStartTransaction(chargePoint string, request 
 	}
 	err = repository.CreateTransaction(context.Background(), &trnx)
 	if err != nil {
-		return core.NewStartTransactionConfirmation(&types.IdTagInfo{}, trnxID), err
+		return core.NewStartTransactionConfirmation(&types.IdTagInfo{Status: types.AuthorizationStatusAccepted}, trnxID), err
 	}
-	return core.NewStartTransactionConfirmation(&types.IdTagInfo{}, 123), nil
+	return core.NewStartTransactionConfirmation(&types.IdTagInfo{Status: types.AuthorizationStatusAccepted}, trnxID), nil
 }
 
 func (h *ChargingStationHandler) OnStopTransaction(chargePoint string, request *core.StopTransactionRequest) (confirmation *core.StopTransactionConfirmation, error error) {
-	trnx,err := repository.GetTransactionByID(context.Background(), request.TransactionId)
+	trnx, err := repository.GetTransactionByID(context.Background(), request.TransactionId)
 	if err != nil {
 		return core.NewStopTransactionConfirmation(), err
 	}
@@ -146,6 +166,7 @@ func (h *ChargingStationHandler) OnStopTransaction(chargePoint string, request *
 	trnx.StopTime = time.Now()
 	trnx.Status = "STOP"
 	trnx.MeterStop = request.MeterStop
+	trnx.UpdatedAt = time.Now()
 	err = repository.UpdateTransaction(context.Background(), trnx.TransactionID, trnx)
 	if err != nil {
 		return core.NewStopTransactionConfirmation(), err

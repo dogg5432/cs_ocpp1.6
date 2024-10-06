@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -53,4 +54,20 @@ type Transaction struct {
 	Status         string             `bson:"status"`
 	CreatedAt      time.Time          `bson:"createdAt"`
 	UpdatedAt      time.Time          `bson:"updatedAt"`
+}
+
+type MeterValue struct {
+	ID            primitive.ObjectID `bson:"_id,omitempty"`
+	ChargePointID string             `bson:"chargePointId"`
+	ConnectorID   int                `bson:"connectorId"`
+	TransactionID int                `bson:"transactionId"`
+	MeterValue    SampledValue       `bson:"meterValue"`
+	CreatedAt     time.Time          `bson:"createdAt"`
+	UpdatedAt     time.Time          `bson:"updatedAt"`
+}
+
+type SampledValue struct {
+	Measurand types.Measurand     `bson:"measurand"`
+	Value     int                 `bson:"value"`
+	Unit      types.UnitOfMeasure `bson:"unit"`
 }

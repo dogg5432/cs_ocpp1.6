@@ -24,3 +24,7 @@ type TransactionRepository interface {
 	CreateTransaction(ctx context.Context, trnx *models.Transaction) error
 	GetTransactionByID(ctx context.Context, transactionID int) (*models.Transaction, error)
 }
+
+type MeterValueRepository interface {
+    SaveMeterValuesToDB(chargePointId string, connectorId int,transactionID *int,sampledValue models.SampledValue) error
+}
